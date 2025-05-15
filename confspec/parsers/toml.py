@@ -18,12 +18,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Parse YAML, JSON, and TOML into Python objects with smart environment variable interpolation."""
+from __future__ import annotations
 
-from configspec.loader import *
-from configspec.parsers import *
+__all__ = ["TomlParser"]
 
-__all__ = ["JsonParser", "Parser", "TomlParser", "YamlParser", "load", "loads", "parser_registry"]
+import typing as t
 
-# Do not change the below field manually. It is updated by CI upon release.
-__version__ = "0.0.1"
+from confspec.parsers import abc
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
+
+class TomlParser(abc.Parser):
+    __slots__ = ()
+
+    @property
+    def reader(self) -> Callable[[bytes], t.Any]:
+        try:
+            import msgspec
+
+            return msgspec.toml.decode
+        except ImportError:
+            import tomllib
+
+            return lambda b: tomllib.loads(b.decode())

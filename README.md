@@ -1,21 +1,21 @@
 # Overview
-Configspec is a configuration loading library for Python that supports smart environment variable interpolation at runtime.
+Confspec is a configuration loading library for Python that supports smart environment variable interpolation at runtime.
 
 It provides a simple way to load configuration from common formats like `YAML`, `JSON`, and `TOML`, while being easy
-to add support for any additional formats. Out-of-the-box, configspec supports parsing application configuration
+to add support for any additional formats. Out-of-the-box, confspec supports parsing application configuration
 into Pydantic models, or Msgspec Structs.
 
 The environment variable interpolation syntax allows you to keep your defaults in the configuration file, while
 still being able to override them from a deployment environment.
 
 ## Installation
-Configspec is available on PyPI and can be installed using your package manager of choice.
+Confspec is available on PyPI and can be installed using your package manager of choice.
 
 ```bash
-pip install configspec
+pip install confspec
 ```
 ```bash
-uv add configspec
+uv add confspec
 ```
 
 ## Usage
@@ -38,8 +38,8 @@ enabled = "${FEATURE_FLAGS[,]:auth,metrics,caching}"
 
 The above configuration file can easily be loaded, with any environment substitution happening automatically.
 ```python
->>> import configspec
->>> configspec.load("config.toml")
+>>> import confspec
+>>> confspec.load("config.toml")
 {
     "server": {
         "port": "8080",
@@ -61,7 +61,7 @@ The above configuration file can easily be loaded, with any environment substitu
 Or if you wanted it to be loaded into a msgspec Struct object. Note that msgspec will coerce some fields
 into the requested types automatically, unless you pass `strict=True`.
 ```python
->>> import configspec
+>>> import confspec
 >>> import msgspec
 
 >>> class Server(msgspec.Struct):
@@ -84,7 +84,7 @@ into the requested types automatically, unless you pass `strict=True`.
 ...    logging: Logging
 ...    features: Features
 
->>> configspec.load("config.toml", cls=Config)
+>>> confspec.load("config.toml", cls=Config)
 Config(
     server=Server(port=8080, debug=False),
     database=Database(url='postgres://postgres:postgres@localhost:5432/postgres'),
@@ -109,4 +109,4 @@ and lets me know that I'm going in the right direction!
 
 ## Links
 - **License:** [MIT](https://choosealicense.com/licenses/mit/)
-- **Repository:** [GitHub](https://github.com/tandemdude/configspec)
+- **Repository:** [GitHub](https://github.com/tandemdude/confspec)

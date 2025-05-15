@@ -18,26 +18,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import annotations
+"""Parse YAML, JSON, and TOML into Python objects with smart environment variable interpolation."""
 
-__all__ = ["YamlParser"]
+from confspec.loader import *
+from confspec.parsers import *
 
-import typing as t
+__all__ = ["JsonParser", "Parser", "TomlParser", "YamlParser", "load", "loads", "parser_registry"]
 
-from configspec.parsers import abc
-
-if t.TYPE_CHECKING:
-    from collections.abc import Callable
-
-
-class YamlParser(abc.Parser):
-    __slots__ = ()
-
-    @property
-    def reader(self) -> Callable[[bytes], t.Any]:
-        try:
-            import ruamel.yaml as yaml
-
-            return yaml.YAML(typ="safe", pure=True).load  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        except ImportError as e:
-            raise ImportError("ruamel.yaml is required for yaml support") from e
+# Do not change the below field manually. It is updated by CI upon release.
+__version__ = "0.0.1"

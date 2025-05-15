@@ -20,7 +20,7 @@
 # SOFTWARE.
 import pytest
 
-from configspec import interpolate
+from confspec import interpolate
 
 
 def test_interpolate_variable_set(monkeypatch: pytest.MonkeyPatch) -> None:

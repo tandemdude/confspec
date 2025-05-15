@@ -133,7 +133,7 @@ wheels = [
 ]
 
 [[package]]
-name = "configspec"
+name = "confspec"
 source = { editable = "." }
 
 [package.dev-dependencies]

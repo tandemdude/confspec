@@ -21,7 +21,7 @@
 import msgspec
 import pydantic
 
-from configspec import helpers
+from confspec import helpers
 
 
 class Struct(msgspec.Struct):

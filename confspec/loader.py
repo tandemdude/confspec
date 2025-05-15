@@ -26,9 +26,9 @@ import json
 import pathlib
 import typing as t
 
-from configspec import helpers
-from configspec import interpolate
-from configspec import parsers
+from confspec import helpers
+from confspec import interpolate
+from confspec import parsers
 
 if t.TYPE_CHECKING:
     from collections.abc import Callable
@@ -142,7 +142,7 @@ def load(
     parses it into the given class (or to a dictionary if no class was provided).
 
     Currently supported formats are: yaml, toml and JSON. Additional formats can be supported by creating your own
-    custom implementation of :obj:`~configspec.parsers.abc.Parser` and registering it with :obj:`~parser_registry`.
+    custom implementation of :obj:`~confspec.parsers.abc.Parser` and registering it with :obj:`~parser_registry`.
 
     Args:
         path: The path to the configuration file.

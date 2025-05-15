@@ -24,7 +24,7 @@ __all__ = ["JsonParser"]
 
 import typing as t
 
-from configspec.parsers import abc
+from confspec.parsers import abc
 
 if t.TYPE_CHECKING:
     from collections.abc import Callable

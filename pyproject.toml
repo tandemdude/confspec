@@ -3,7 +3,7 @@ requires = ["flit_core >=3.9,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "configspec"
+name = "confspec"
 readme = "README.md"
 requires-python = ">=3.10.0,<3.14"
 authors = [{name = "tandemdude", email = "tandemdude1@gmail.com"}]
@@ -27,8 +27,8 @@ classifiers = [
 dynamic = ["version", "description"]
 
 [project.urls]
-Homepage = "https://github.com/tandemdude/configspec"
-Repository = "https://github.com/tandemdude/configspec"
+Homepage = "https://github.com/tandemdude/confspec"
+Repository = "https://github.com/tandemdude/confspec"
 #Documentation = "https://linkd.readthedocs.io/en/latest/"
 #Changelog = "https://linkd.readthedocs.io/en/latest/changelog.html"
 
@@ -66,14 +66,14 @@ typecheck = [
 ]
 
 [tool.flit.module]
-name = "configspec"
+name = "confspec"
 
 [tool.towncrier]
 directory = "fragments"
 filename = "CHANGES.md"
 package = "linkd"
 title_format = "v{version} ({project_date})"
-issue_format = "[#{issue}](https://github.com/tandemdude/configspec/issues/{issue})"
+issue_format = "[#{issue}](https://github.com/tandemdude/confspec/issues/{issue})"
 orphan_prefix = "+"
 type = [
     { directory = "breaking", name = "Breaking Changes", showcontent = true },
@@ -150,7 +150,7 @@ require-superclass = true
 require-subclass = true
 
 [tool.pyright]
-include = ["configspec"]
+include = ["confspec"]
 exclude = ["docs", ".github"]
 pythonVersion = "3.10"
 typeCheckingMode = "strict"

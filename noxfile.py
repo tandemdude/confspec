@@ -27,7 +27,7 @@ import nox
 from nox import options
 
 SCRIPT_PATHS = [
-    os.path.join(".", "configspec"),
+    os.path.join(".", "confspec"),
     # os.path.join(".", "scripts"),
     os.path.join(".", "tests"),
     "noxfile.py",
@@ -70,7 +70,7 @@ def typecheck(session: nox.Session) -> None:
 @nox_session()
 def slotscheck(session: nox.Session) -> None:
     session.install("--group", "slotscheck")
-    session.run("python", "-m", "slotscheck", "-m", "configspec")
+    session.run("python", "-m", "slotscheck", "-m", "confspec")
 
 
 @nox_session()
@@ -79,7 +79,7 @@ def test(session: nox.Session) -> None:
 
     args = ["python", "-m", "pytest"]
     if session.posargs:
-        args.extend(["--cov", "configspec"])
+        args.extend(["--cov", "confspec"])
     args.append("tests")
 
     session.run(*args)

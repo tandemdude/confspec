@@ -22,7 +22,7 @@ from __future__ import annotations
 
 __all__ = ["JsonParser", "Parser", "TomlParser", "YamlParser"]
 
-from configspec.parsers.abc import Parser
-from configspec.parsers.json import JsonParser
-from configspec.parsers.toml import TomlParser
-from configspec.parsers.yaml import YamlParser
+from confspec.parsers.abc import Parser
+from confspec.parsers.json import JsonParser
+from confspec.parsers.toml import TomlParser
+from confspec.parsers.yaml import YamlParser
