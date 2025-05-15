@@ -20,7 +20,7 @@
 # SOFTWARE.
 from __future__ import annotations
 
-__all__ = []
+__all__ = ["load", "loads", "parser_registry"]
 
 import json
 import pathlib

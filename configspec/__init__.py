@@ -20,10 +20,10 @@
 # SOFTWARE.
 """TODO."""
 
-from configspec.loader import load
-from configspec.loader import loads
+from configspec.loader import *
+from configspec.parsers import *
 
-__all__ = ["load", "loads"]
+__all__ = ["JsonParser", "Parser", "TomlParser", "YamlParser", "load", "loads", "parser_registry"]
 
 # Do not change the below field manually. It is updated by CI upon release.
 __version__ = "0.0.1"
