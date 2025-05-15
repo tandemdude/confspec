@@ -1,23 +1,164 @@
+[build-system]
+requires = ["flit_core >=3.9,<4"]
+build-backend = "flit_core.buildapi"
+
 [project]
 name = "configspec"
-version = "0.1.0"
-description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = []
+requires-python = ">=3.10.0,<3.14"
+authors = [{name = "tandemdude", email = "tandemdude1@gmail.com"}]
+keywords = ["ioc", "dependency injection", "injection", "inversion of control", "asyncio"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dynamic = ["version", "description"]
 
-[project.optional-dependencies]
-msgspec = [
-    "msgspec>=0.19.0",
-]
-yaml = [
-    "ruamel-yaml>=0.18.10",
-]
-pydantic = [
-    "pydantic>=2.11.4",
-]
+[project.urls]
+Homepage = "https://github.com/tandemdude/configspec"
+Repository = "https://github.com/tandemdude/configspec"
+#Documentation = "https://linkd.readthedocs.io/en/latest/"
+#Changelog = "https://linkd.readthedocs.io/en/latest/changelog.html"
 
 [dependency-groups]
+changelog = [
+    "towncrier>=24.8.0",
+]
 dev = [
     "nox>=2025.5.1",
 ]
+extras = [
+    "msgspec>=0.19.0",
+    "pydantic>=2.11.4",
+    "ruamel-yaml>=0.18.10",
+]
+format = [
+    "ruff>=0.11.9",
+]
+release = [
+    "flit>=3.12.0",
+]
+slotscheck = [
+    "slotscheck>=0.19.1",
+]
+test = [
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-randomly>=3.16.0",
+    { include-group = "extras" }
+]
+typecheck = [
+    "pyright>=1.1.400",
+    { include-group = "extras" },
+    { include-group = "test" }
+]
+
+[tool.flit.module]
+name = "configspec"
+
+[tool.towncrier]
+directory = "fragments"
+filename = "CHANGES.md"
+package = "linkd"
+title_format = "v{version} ({project_date})"
+issue_format = "[#{issue}](https://github.com/tandemdude/configspec/issues/{issue})"
+orphan_prefix = "+"
+type = [
+    { directory = "breaking", name = "Breaking Changes", showcontent = true },
+    { directory = "removal", name = "Removals", showcontent = true },
+    { directory = "deprecation", name = "Deprecations", showcontent = true },
+    { directory = "feature", name = "Features", showcontent = true },
+    { directory = "bugfix", name = "Bugfixes", showcontent = true },
+    { directory = "doc", name = "Documentation", showcontent = true },
+    { directory = "misc", name = "Miscellaneous", showcontent = true },
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+preview = true
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # Pyflakes
+    "I",     # isort
+    "TCH",   # typechecking imports
+    "N",     # naming
+    "ASYNC", # async lints
+    "Q",     # enforce double-quotes
+    "RSE",   # avoid needless parens
+    "SIM",   # simplification
+    "RUF",   # ruff lints
+    "D2",    # Docstring formatting
+    "D213",  # Multi-line docstring summary should start at the second line
+    "D3",    # Use triple-quotes
+    "D415",  # First line of docstring should end with period
+    "D417",  # Missing argument descriptions in docstring
+    "D418",  # No docstring on @overload
+    "D419",  # No empty docstring
+    "ANN2",  # Function missing return type annotation
+]
+fixable = [
+    "I",     # isort errors
+    "TCH",   # typechecking imports
+    "F401",  # unused import
+    "F404",  # late __future__ import
+    "F541",  # f-string with no placeholders
+    "RUF022",  # __all__ is not sorted
+    "RUF023",  # {}.__slots__ is not sorted
+]
+ignore = [
+    "D212",  # Multi-line docstring summary should start at the first line
+    "RUF001", # ambiguous character
+    "N818",   # exception name should end in Error
+    "D205",   # 1 blank line required between summary line and description
+]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.per-file-ignores]
+# F401 (Unused import) - init files don't use their imports
+# F403 (Star import used) - hopefully we're sensible enough to know what objects modules contain
+# F405 (Import via star) - everything is imported to top-level
+"__init__.py" = ["F401", "F403", "F405"]
+
+# N802 (Function name should be lowercase)
+# RUF029 (Function is declared async but does not use async/await)
+"tests/*.py" = ["N802", "RUF029"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.slotscheck]
+strict-imports = true
+require-superclass = true
+require-subclass = true
+
+[tool.pyright]
+include = ["configspec"]
+exclude = ["docs", ".github"]
+pythonVersion = "3.10"
+typeCheckingMode = "strict"
+
+reportUnnecessaryTypeIgnoreComment = "error"
+reportMissingTypeStubs = "none"
+reportImportCycles = "none" # Doesn't account for TYPE_CHECKING
+reportIncompatibleMethodOverride = "none"  # This relies on ordering for keyword-only arguments
+reportOverlappingOverload = "none" # Type-Vars in last overloads may interfere
+reportIncompatibleVariableOverride = "none" # Cannot overwrite abstract properties using attrs
+reportPrivateUsage = "none" # Too annoying

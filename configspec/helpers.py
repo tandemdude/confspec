@@ -18,12 +18,31 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""TODO."""
+from __future__ import annotations
 
-from configspec.loader import load
-from configspec.loader import loads
+__all__ = ["is_msgspec", "is_pydantic"]
 
-__all__ = ["load", "loads"]
+import typing as t
 
-# Do not change the below field manually. It is updated by CI upon release.
-__version__ = "0.0.1"
+if t.TYPE_CHECKING:
+    import msgspec
+    import pydantic
+    import typing_extensions as t_ex
+
+
+def is_msgspec(cls: t.Any) -> t_ex.TypeGuard[type[msgspec.Struct]]:
+    try:
+        import msgspec
+
+        return issubclass(cls, msgspec.Struct)
+    except ImportError:
+        return False
+
+
+def is_pydantic(cls: t.Any) -> t_ex.TypeGuard[type[pydantic.BaseModel]]:
+    try:
+        import pydantic
+
+        return issubclass(cls, pydantic.BaseModel)
+    except ImportError:
+        return False

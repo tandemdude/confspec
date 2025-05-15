@@ -22,18 +22,24 @@ from __future__ import annotations
 
 __all__ = ["TomlParser"]
 
-from collections.abc import Callable
+import typing as t
 
 from configspec.parsers import abc
 
-import typing as t
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class TomlParser(abc.Parser):
+    __slots__ = ()
+
+    @property
     def reader(self) -> Callable[[bytes], t.Any]:
         try:
             import msgspec
+
             return msgspec.toml.decode
         except ImportError:
             import tomllib
+
             return lambda b: tomllib.loads(b.decode())

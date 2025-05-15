@@ -22,17 +22,22 @@ from __future__ import annotations
 
 __all__ = ["YamlParser"]
 
-from collections.abc import Callable
+import typing as t
 
 from configspec.parsers import abc
 
-import typing as t
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class YamlParser(abc.Parser):
+    __slots__ = ()
+
+    @property
     def reader(self) -> Callable[[bytes], t.Any]:
         try:
             import ruamel.yaml as yaml
-            return yaml.YAML(typ="safe", pure=True).load
+
+            return yaml.YAML(typ="safe", pure=True).load  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
         except ImportError as e:
             raise ImportError("ruamel.yaml is required for yaml support") from e

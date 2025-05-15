@@ -23,19 +23,21 @@ from __future__ import annotations
 __all__ = ["Parser"]
 
 import abc
-
 import typing as t
-from collections.abc import Callable
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class Parser(abc.ABC):
+    __slots__ = ()
+
     @property
     @abc.abstractmethod
-    def reader(self) -> Callable[[bytes], t.Any]:
-        ...
+    def reader(self) -> Callable[[bytes], t.Any]: ...
 
     def read(self, raw: bytes) -> dict[str, t.Any]:
         parsed = self.reader(raw)
         if not isinstance(parsed, dict):
             raise ValueError("require dict")
-        return parsed
+        return t.cast("dict[str, t.Any]", parsed)

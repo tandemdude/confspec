@@ -18,12 +18,25 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""TODO."""
+import msgspec
+import pydantic
 
-from configspec.loader import load
-from configspec.loader import loads
+from configspec import helpers
 
-__all__ = ["load", "loads"]
 
-# Do not change the below field manually. It is updated by CI upon release.
-__version__ = "0.0.1"
+class Struct(msgspec.Struct):
+    foo: str
+
+
+class Model(pydantic.BaseModel):
+    foo: str
+
+
+def test_is_msgspec() -> None:
+    assert helpers.is_msgspec(Struct) is True
+    assert helpers.is_msgspec(Model) is False
+
+
+def test_is_pydantic() -> None:
+    assert helpers.is_pydantic(Model) is True
+    assert helpers.is_pydantic(Struct) is False

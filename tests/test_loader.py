@@ -18,12 +18,44 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""TODO."""
+from configspec import loader
 
-from configspec.loader import load
-from configspec.loader import loads
+JSON_SAMPLE = """
+{"foo": "bar", "baz": 123}
+"""
 
-__all__ = ["load", "loads"]
 
-# Do not change the below field manually. It is updated by CI upon release.
-__version__ = "0.0.1"
+def test_loads_json() -> None:
+    parsed = loader.loads(JSON_SAMPLE, "json")
+
+    assert isinstance(parsed, dict)
+    assert parsed["foo"] == "bar"
+    assert parsed["baz"] == 123
+
+
+YAML_SAMPLE = """
+foo: bar
+baz: 123
+"""
+
+
+def test_loads_yaml() -> None:
+    parsed = loader.loads(YAML_SAMPLE, "yaml")
+
+    assert isinstance(parsed, dict)
+    assert parsed["foo"] == "bar"
+    assert parsed["baz"] == 123
+
+
+TOML_SAMPLE = """
+foo = "bar"
+baz = 123
+"""
+
+
+def test_loads_toml() -> None:
+    parsed = loader.loads(TOML_SAMPLE, "toml")
+
+    assert isinstance(parsed, dict)
+    assert parsed["foo"] == "bar"
+    assert parsed["baz"] == 123
