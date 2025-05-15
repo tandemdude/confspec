@@ -46,6 +46,7 @@ parser_registry: dict[str, type[parsers.Parser]] = {
     "yaml": parsers.YamlParser,
     "yml": parsers.YamlParser,
 }
+"""Dictionary mapping file extension to parser class used when parsing data of that format."""
 
 KnownFormats: t.TypeAlias = t.Literal["json", "toml", "yaml", "yml"]
 
@@ -107,6 +108,11 @@ def loads(
     strict: bool = False,
     dec_hook: Callable[[type[t.Any], t.Any], t.Any] | None = None,
 ) -> dict[str, t.Any] | pydantic.BaseModel | msgspec.Struct:
+    """
+    Like :meth:`~load`, but loads the configuration from the given string or bytes object instead. You must
+    pass a format when using this method so that the library knows which parser to use. All other arguments
+    have the same meaning as in :meth:`~load`.
+    """
     return _loads(raw, fmt, cls=cls, strict=strict, dec_hook=dec_hook)
 
 
@@ -131,6 +137,29 @@ def load(
     strict: bool = False,
     dec_hook: Callable[[type[t.Any], t.Any], t.Any] | None = None,
 ) -> dict[str, t.Any] | pydantic.BaseModel | msgspec.Struct:
+    """
+    Loads arbitrary configuration from the given path, performing environment variable substitutions, and
+    parses it into the given class (or to a dictionary if no class was provided).
+
+    Currently supported formats are: yaml, toml and JSON. Additional formats can be supported by creating your own
+    custom implementation of :obj:`~configspec.parsers.abc.Parser` and registering it with :obj:`~parser_registry`.
+
+    Args:
+        path: The path to the configuration file.
+        cls: The pydantic BaseModel, or msgspec Struct to parse the configuration into. If :obj:`None`, the
+            configuration will be parsed into a dictionary. Defaults to :obj:`None`.
+        strict: Whether the parsing behaviour of pydantic/msgspec should be in strict mode. Defaults to :obj:`False`.
+            If :obj:`True`, then parsers will not perform type coercion (e.g. digit string to int).
+        dec_hook: Optional decode hook for msgspec to use when parsing to allow supporting additional types.
+
+    Returns:
+        The parsed configuration.
+
+    Raises:
+        :obj:`NotImplementedError`: If a file with an unrecognized format is specified.
+        :obj:`ValueError`: If the file cannot be parsed to a dictionary (e.g. the top level object is an array).
+        :obj:`ImportError`: If a required dependency is not installed.
+    """
     path = pathlib.Path(path) if not isinstance(path, pathlib.Path) else path
 
     with open(path, "rb") as file:

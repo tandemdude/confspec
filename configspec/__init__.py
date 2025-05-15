@@ -18,7 +18,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""TODO."""
+"""Parse YAML, JSON, and TOML into Python objects with smart environment variable interpolation."""
 
 from configspec.loader import *
 from configspec.parsers import *
