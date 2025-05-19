@@ -93,6 +93,38 @@ Config(
 )
 ```
 
+## Interpolation Syntax
+
+- `${VAR}`
+  - replaced with the value of the `VAR` environment variable
+  - if `VAR` is unset during interpolation, a `KeyError` will be raised
+- `${VAR:default}`
+  - replaced with the value of the `VAR` environment variable
+  - if `VAR` is unset during interpolation, the default value will be used instead
+- `${VAR[,]}`
+  - performs list expansion on the value of the `VAR` environment variable, splitting on the delimiter (in this case `,`)
+  - the delimiter can be any combination of one or more characters, excluding `]` and `}`
+  - this operator cannot be applied to patterns within a longer string
+- `${VAR~}`
+  - strips whitespace from the value of the `VAR` environment variable (or the default if one is specified)
+  - if combined with list expansion, each individual element will have its whitespace stripped
+- `${VAR?}`
+  - replaced with the value of the `VAR` environment variable
+  - if `VAR` is unset during interpolation, it will be replaced with Python's `None` instead
+
+Most of these interpolation rules can be combined, except for a default value and the "None as default" flag.
+
+For example:
+
+- `${VAR[,]~:default}` - valid
+- `${VAR[,]~?}` - valid
+- `${VAR[,]~?:default}` - invalid
+
+> [!NOTE]
+> The order that the flags are written is important, as the interpolation syntax is parsed using regex. You should
+> always specify the flags in the same order as the valid expressions shown above.
+
+
 ## Issues
 If you find any bugs, issues, or unexpected behaviour while using the library, you should open an issue with
 details of the problem and how to reproduce if possible. Please also open an issue for any new features
