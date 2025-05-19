@@ -26,8 +26,14 @@ import os
 import re
 import typing as t
 
+_escaped = r"(?P<escaped>\$)"
+_name = r"(?P<name>[a-zA-Z_]\w*)"
+_delim = r"(?P<delim>[^]}]+)"
+_strip = r"(?P<strip>~)"
+_default = r"(?P<default>:[^}]*|\?)"
+
 INTERPOLATION_PATTERN: t.Final[re.Pattern[str]] = re.compile(
-    r"(?P<escaped>\$)?(?P<raw>\${(?P<name>[a-zA-Z_]\w*)(?:\[(?P<delim>[^]}]+)])?(?P<strip>~)?(?P<default>:[^}]*)?})"
+    rf"{_escaped}?(?P<raw>\${{{_name}(?:\[{_delim}])?{_strip}?{_default}?}})"
 )
 
 
@@ -50,16 +56,21 @@ def _replace_fn(match: re.Match[str]) -> str:
 
 
 def try_interpolate(value: str) -> t.Any:
-    if (
-        (match := INTERPOLATION_PATTERN.fullmatch(value)) is not None
-        and (delim := match.group("delim")) is not None
-        and match.group("escaped") is None
-    ):
-        # if a delimiter was specified - and expression is not escaped, split into list
-        # otherwise we can just use the standard substitution function
-        strip = match.group("strip") is not None
-        val = os.getenv(match.group("name"), (match.group("default") or "")[1:])
-        return [(elem.strip() if strip else elem) for elem in val.split(delim)]
+    match = INTERPOLATION_PATTERN.fullmatch(value)
+    matched_and_not_escaped = match is not None and match.group("escaped") is None
+
+    if matched_and_not_escaped:
+        assert match is not None
+        # If the "?" (None as default) flag is present, and the variable is unset
+        # then return None
+        if match.group("default") == "?" and os.getenv(match.group("name")) is None:
+            return None
+
+        # if a delimiter was specified, split into list - otherwise use the standard substitution function
+        if (delim := match.group("delim")) is not None:
+            strip = match.group("strip") is not None
+            val = os.getenv(match.group("name"), (match.group("default") or "")[1:])
+            return [(elem.strip() if strip else elem) for elem in val.split(delim)]
 
     return INTERPOLATION_PATTERN.sub(_replace_fn, value)
 

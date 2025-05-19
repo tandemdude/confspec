@@ -69,3 +69,15 @@ def test_interpolate_default_variable_unset(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.delenv("FOO", raising=False)
 
     assert interpolate.try_interpolate("${FOO:baz}") == "baz"
+
+
+def test_interpolate_default_none_variable_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FOO", "bar")
+
+    assert interpolate.try_interpolate("${FOO?}") == "bar"
+
+
+def test_interpolate_default_none_variable_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("FOO", raising=False)
+
+    assert interpolate.try_interpolate("${FOO?}") is None
