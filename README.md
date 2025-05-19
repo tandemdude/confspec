@@ -111,6 +111,7 @@ Config(
 - `${VAR?}`
   - replaced with the value of the `VAR` environment variable
   - if `VAR` is unset during interpolation, it will be replaced with Python's `None` instead
+  - this operator cannot be applied to patterns within a longer string
 
 Most of these interpolation rules can be combined, except for a default value and the "None as default" flag.
 
