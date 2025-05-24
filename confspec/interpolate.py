@@ -47,10 +47,10 @@ def _replace_fn(match: re.Match[str]) -> str:
     var, is_set = os.getenv(name := match.group("name")), name in os.environ
     if not is_set:
         if (default := match.group("default")) is None:
-            raise KeyError(f"environment variable '{var}' is not set and no default was specified")
+            raise KeyError(f"environment variable '{name}' is not set and no default was specified")
 
         if default == "?":
-            raise SyntaxError(f"None-as-default ('?') flag is not supported within strings")
+            raise SyntaxError("None-as-default ('?') flag is not supported within strings")
 
         resolved = str(default)[1:]  # strip the leading colon
     else:

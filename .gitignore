@@ -38,6 +38,9 @@ CHANGES.tmp.md
 
 # Test files
 main.py
+main.toml
+main.json
+main.yaml
 
 # Stupid OSX files
 .DS_Store
