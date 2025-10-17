@@ -22,7 +22,9 @@ from __future__ import annotations
 
 __all__ = ["load", "loads", "parser_registry"]
 
+import functools
 import json
+import os
 import pathlib
 import typing as t
 
@@ -51,8 +53,19 @@ parser_registry: dict[str, type[parsers.Parser]] = {
 KnownFormats: t.TypeAlias = t.Literal["json", "toml", "yaml", "yml"]
 
 
+def _merge_dicts(d1: dict[str, t.Any], d2: dict[str, t.Any]) -> dict[str, t.Any]:
+    for key in d2:
+        if key in d1 and isinstance(d1[key], dict) and isinstance(d2[key], dict):
+            _merge_dicts(d1[key], d2[key])
+            continue
+
+        d1[key] = d2[key]
+
+    return d1
+
+
 def _loads(
-    raw: str | bytes,
+    hierarchy: list[str | bytes],
     fmt: KnownFormats | str,
     /,
     *,
@@ -64,10 +77,11 @@ def _loads(
     if parser is None:
         raise NotImplementedError(f"no parser registered for format {fmt!r}")
 
-    if isinstance(raw, str):
-        raw = raw.encode()
+    mappings: list[dict[str, t.Any]] = []
+    for raw in hierarchy:
+        mappings.append(parser().read(raw.encode() if isinstance(raw, str) else raw))
 
-    parsed = parser().read(raw)
+    parsed = functools.reduce(_merge_dicts, mappings)
     interpolated = interpolate.InterpolationVisitor().visit(parsed)
     if cls is None:
         return interpolated
@@ -113,17 +127,18 @@ def loads(
     pass a format when using this method so that the library knows which parser to use. All other arguments
     have the same meaning as in :meth:`~load`.
     """
-    return _loads(raw, fmt, cls=cls, strict=strict, dec_hook=dec_hook)
+    return _loads([raw], fmt, cls=cls, strict=strict, dec_hook=dec_hook)
 
 
 @t.overload
-def load(path: str | pathlib.Path, /) -> dict[str, t.Any]: ...
+def load(path: str | pathlib.Path, /, *, env: str | None = None) -> dict[str, t.Any]: ...
 @t.overload
 def load(
     path: str | pathlib.Path,
     /,
     *,
     cls: type[StructT],
+    env: str | None = None,
     strict: bool = False,
     dec_hook: Callable[[type[t.Any], t.Any], t.Any] | None = None,
 ) -> StructT: ...
@@ -134,6 +149,7 @@ def load(
     /,
     *,
     cls: type[pydantic.BaseModel | msgspec.Struct] | None = None,
+    env: str | None = None,
     strict: bool = False,
     dec_hook: Callable[[type[t.Any], t.Any], t.Any] | None = None,
 ) -> dict[str, t.Any] | pydantic.BaseModel | msgspec.Struct:
@@ -148,6 +164,11 @@ def load(
         path: The path to the configuration file.
         cls: The pydantic BaseModel, or msgspec Struct to parse the configuration into. If :obj:`None`, the
             configuration will be parsed into a dictionary. Defaults to :obj:`None`.
+        env: The name of an additional environment configuration to load and merge with the base configuration.
+            When provided, an environment-specific file will be looked up using the same base name as the main
+            configuration file and the given environment as a suffix (e.g., ``config.prod.yaml`` for ``env="prod"``).
+            If not provided, the environment name will be read from the ``CONFSPEC_ENV`` environment variable if set.
+            If neither is specified, only the base configuration file will be loaded.
         strict: Whether the parsing behaviour of pydantic/msgspec should be in strict mode. Defaults to :obj:`False`.
             If :obj:`True`, then parsers will not perform type coercion (e.g. digit string to int).
         dec_hook: Optional decode hook for msgspec to use when parsing to allow supporting additional types.
@@ -156,13 +177,20 @@ def load(
         The parsed configuration.
 
     Raises:
-        :obj:`NotImplementedError`: If a file with an unrecognized format is specified.
+        :obj:`NotImplementedError`: If a file with an unrecognised format is specified.
         :obj:`ValueError`: If the file cannot be parsed to a dictionary (e.g. the top level object is an array).
         :obj:`ImportError`: If a required dependency is not installed.
     """
     path = pathlib.Path(path) if not isinstance(path, pathlib.Path) else path
 
+    contents: list[str | bytes] = []
     with open(path, "rb") as file:
-        content = file.read().strip()
+        contents.append(file.read().strip())
 
-    return _loads(content, path.suffix[1:], cls=cls, strict=strict, dec_hook=dec_hook)
+    resolved_env = (env or os.getenv("CONFSPEC_ENV", "")).strip()
+    env_file_path = (path.parent / helpers.env_file_name(path, resolved_env)) if resolved_env else None
+    if env_file_path and env_file_path.is_file():
+        with open(env_file_path, "rb") as file:
+            contents.append(file.read().strip())
+
+    return _loads(contents, path.suffix[1:], cls=cls, strict=strict, dec_hook=dec_hook)

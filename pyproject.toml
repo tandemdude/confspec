@@ -5,9 +5,12 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "confspec"
 readme = "README.md"
-requires-python = ">=3.10.0,<3.14"
+requires-python = ">=3.10.0,<3.15"
 authors = [{name = "tandemdude", email = "tandemdude1@gmail.com"}]
-keywords = ["ioc", "dependency injection", "injection", "inversion of control", "asyncio"]
+keywords = [
+    "configuration", "config", "settings", "environment", "env", "yaml", "toml", "json", "schema",
+    "config-file", "environment-variables", "structured-config", "config-loader", "environment-substitution"
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "License :: OSI Approved :: MIT License",
@@ -34,10 +37,10 @@ Repository = "https://github.com/tandemdude/confspec"
 
 [dependency-groups]
 changelog = [
-    "towncrier>=24.8.0",
+    "towncrier>=25.8.0",
 ]
 dev = [
-    "nox>=2025.5.1",
+    "nox>=2025.10.16",
 ]
 extras = [
     "msgspec>=0.19.0",
@@ -45,7 +48,7 @@ extras = [
     "ruamel-yaml>=0.18.10",
 ]
 format = [
-    "ruff>=0.11.9",
+    "ruff>=0.14.1",
 ]
 release = [
     "flit>=3.12.0",
@@ -54,13 +57,13 @@ slotscheck = [
     "slotscheck>=0.19.1",
 ]
 test = [
-    "pytest>=8.3.5",
-    "pytest-cov>=6.1.1",
-    "pytest-randomly>=3.16.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "pytest-randomly>=4.0.1",
     { include-group = "extras" }
 ]
 typecheck = [
-    "pyright>=1.1.400",
+    "pyright>=1.1.406",
     { include-group = "extras" },
     { include-group = "test" }
 ]

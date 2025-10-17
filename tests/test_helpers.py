@@ -18,10 +18,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import pathlib
+
 import msgspec
 import pydantic
 
 from confspec import helpers
+
+
+def test_env_file_name() -> None:
+    assert helpers.env_file_name(pathlib.Path("/foo/bar.yml"), "prod") == "bar.prod.yml"
+    assert helpers.env_file_name(pathlib.Path("/foo/bar.baz.yml"), "prod") == "bar.prod.baz.yml"
+    assert helpers.env_file_name(pathlib.Path("/foo/.baz"), "prod") == ".baz.prod"
 
 
 class Struct(msgspec.Struct):

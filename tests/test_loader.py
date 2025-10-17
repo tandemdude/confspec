@@ -20,6 +20,33 @@
 # SOFTWARE.
 from confspec import loader
 
+
+def test_merge_dicts() -> None:
+    # Basic overwrite
+    assert loader._merge_dicts({"a": 1, "b": 2}, {"b": 3, "c": 4}) == {"a": 1, "b": 3, "c": 4}
+    # Nested merge
+    assert loader._merge_dicts({"a": {"x": 1}, "b": 2}, {"a": {"y": 3}}) == {"a": {"x": 1, "y": 3}, "b": 2}
+    # Deep nested merge + overwrite
+    assert loader._merge_dicts({"a": {"b": {"c": 1}}}, {"a": {"b": {"c": 2, "d": 3}}}) == {"a": {"b": {"c": 2, "d": 3}}}
+    # Overwrite non-dict with dict
+    assert loader._merge_dicts({"a": 1}, {"a": {"b": 2}}) == {"a": {"b": 2}}
+    # Overwrite dict with non-dict
+    assert loader._merge_dicts({"a": {"b": 2}}, {"a": 1}) == {"a": 1}
+    # Empty source
+    assert loader._merge_dicts({}, {"x": 10}) == {"x": 10}
+    # Empty merge target
+    assert loader._merge_dicts({"x": 1}, {}) == {"x": 1}
+    # Non-overlapping keys
+    assert loader._merge_dicts({"x": 1}, {"y": 2}) == {"x": 1, "y": 2}
+    # Nested mixed overwrite
+    assert loader._merge_dicts({"a": {"b": {"c": 1, "d": 2}}, "x": 5}, {"a": {"b": {"d": 99, "e": 100}}, "x": 10}) == {
+        "a": {"b": {"c": 1, "d": 99, "e": 100}},
+        "x": 10,
+    }
+    # Lists should be overwritten, not merged
+    assert loader._merge_dicts({"a": [1, 2]}, {"a": [3, 4]}) == {"a": [3, 4]}
+
+
 JSON_SAMPLE = """
 {"foo": "bar", "baz": 123}
 """

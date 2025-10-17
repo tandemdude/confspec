@@ -20,14 +20,21 @@
 # SOFTWARE.
 from __future__ import annotations
 
-__all__ = ["is_msgspec", "is_pydantic"]
+__all__ = ["env_file_name", "is_msgspec", "is_pydantic"]
 
 import typing as t
 
 if t.TYPE_CHECKING:
+    import pathlib
+
     import msgspec
     import pydantic
     import typing_extensions as t_ex
+
+
+def env_file_name(path: pathlib.Path, env: str) -> str:
+    base = path.name[: path.name.find(".") or len(path.name)]
+    return f"{base}.{env}{''.join(path.suffixes)}"
 
 
 def is_msgspec(cls: t.Any) -> t_ex.TypeGuard[type[msgspec.Struct]]:
