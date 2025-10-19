@@ -188,6 +188,9 @@ def load(
         contents.append(file.read().strip())
 
     resolved_env = (env or os.getenv("CONFSPEC_ENV", "")).strip()
+    if resolved_env:
+        os.environ["CONFSPEC_ENV"] = resolved_env
+
     env_file_path = (path.parent / helpers.env_file_name(path, resolved_env)) if resolved_env else None
     if env_file_path and env_file_path.is_file():
         with open(env_file_path, "rb") as file:
