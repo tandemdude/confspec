@@ -87,7 +87,7 @@ type = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 preview = true
@@ -152,7 +152,7 @@ require-subclass = true
 [tool.pyright]
 include = ["confspec"]
 exclude = ["docs", ".github"]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 typeCheckingMode = "strict"
 
 reportUnnecessaryTypeIgnoreComment = "error"
@@ -162,3 +162,6 @@ reportIncompatibleMethodOverride = "none"  # This relies on ordering for keyword
 reportOverlappingOverload = "none" # Type-Vars in last overloads may interfere
 reportIncompatibleVariableOverride = "none" # Cannot overwrite abstract properties using attrs
 reportPrivateUsage = "none" # Too annoying
+
+[tool.coverage.report]
+exclude_also = ["if t.TYPE_CHECKING:", "def __repr__"]

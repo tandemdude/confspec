@@ -65,9 +65,10 @@ def temp_set_env(key: str, value: str | None) -> Generator[None, t.Any, t.Any]:
     if value is not None:
         os.environ[key] = value
 
-    yield
-
-    if old_value is not None:
-        os.environ[key] = old_value
-    else:
-        os.environ.pop(key, None)
+    try:
+        yield
+    finally:
+        if old_value is not None:
+            os.environ[key] = old_value
+        else:
+            os.environ.pop(key, None)
