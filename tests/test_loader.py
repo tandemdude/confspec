@@ -99,7 +99,7 @@ def test_load_file_with_env() -> None:
     parsed = loader.load("tests/resources/config.toml", env="prod")
 
     assert isinstance(parsed, dict)
-    assert parsed == {"foo": "baz", "baz": 123, "bork": {"qux": 123}}
+    assert parsed == {"env": "prod", "foo": "baz", "baz": 123, "bork": {"qux": 123}}
 
 
 def test_load_multiple_files() -> None:
@@ -107,6 +107,7 @@ def test_load_multiple_files() -> None:
 
     assert isinstance(parsed, dict)
     assert parsed == {
+        "env": "prod",
         "foo": "baz",
         "baz": 123,
         "bork": {"qux": 123},
