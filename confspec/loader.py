@@ -27,6 +27,7 @@ import json
 import os
 import pathlib
 import typing as t
+from collections.abc import Sequence
 
 from confspec import helpers
 from confspec import interpolate
@@ -53,6 +54,11 @@ parser_registry: dict[str, type[parsers.Parser]] = {
 KnownFormats: t.TypeAlias = t.Literal["json", "toml", "yaml", "yml"]
 
 
+class ContentAndFormat(t.NamedTuple):
+    content: str | bytes
+    format: str
+
+
 def _merge_dicts(d1: dict[str, t.Any], d2: dict[str, t.Any]) -> dict[str, t.Any]:
     for key in d2:
         if key in d1 and isinstance(d1[key], dict) and isinstance(d2[key], dict):
@@ -65,21 +71,21 @@ def _merge_dicts(d1: dict[str, t.Any], d2: dict[str, t.Any]) -> dict[str, t.Any]
 
 
 def _loads(
-    hierarchy: list[str | bytes],
-    fmt: KnownFormats | str,
+    hierarchy: Sequence[ContentAndFormat],
     /,
     *,
     cls: type[pydantic.BaseModel | msgspec.Struct] | None = None,
     strict: bool = False,
     dec_hook: Callable[[type[t.Any], t.Any], t.Any] | None = None,
 ) -> dict[str, t.Any] | pydantic.BaseModel | msgspec.Struct:
-    parser = parser_registry.get(fmt)
-    if parser is None:
-        raise NotImplementedError(f"no parser registered for format {fmt!r}")
-
     mappings: list[dict[str, t.Any]] = []
-    for raw in hierarchy:
-        mappings.append(parser().read(raw.encode() if isinstance(raw, str) else raw))
+    for item in hierarchy:
+        parser = parser_registry.get(item.format)
+        if parser is None:
+            raise NotImplementedError(f"no parser registered for format {item.format!r}")
+
+        content = item.content.encode() if isinstance(item.content, str) else item.content
+        mappings.append(parser().read(content))
 
     parsed = functools.reduce(_merge_dicts, mappings)
     interpolated = interpolate.InterpolationVisitor().visit(parsed)
@@ -127,14 +133,35 @@ def loads(
     pass a format when using this method so that the library knows which parser to use. All other arguments
     have the same meaning as in :meth:`~load`.
     """
-    return _loads([raw], fmt, cls=cls, strict=strict, dec_hook=dec_hook)
+    return _loads([ContentAndFormat(raw, fmt)], cls=cls, strict=strict, dec_hook=dec_hook)
+
+
+def _load(path: str | pathlib.Path, env: str | None) -> list[ContentAndFormat]:
+    path = pathlib.Path(path) if not isinstance(path, pathlib.Path) else path
+
+    contents: list[ContentAndFormat] = []
+    with open(path, "rb") as file:
+        contents.append(ContentAndFormat(file.read().strip(), fmt := path.suffix[1:]))
+
+    if env is None:
+        return contents
+
+    env_file_path = path.parent / helpers.env_file_name(path, env)
+    if env_file_path and env_file_path.is_file():
+        with open(env_file_path, "rb") as file:
+            contents.append(ContentAndFormat(file.read().strip(), fmt))
+
+    return contents
+
+
+Paths: t.TypeAlias = str | pathlib.Path | Sequence[str | pathlib.Path]
 
 
 @t.overload
-def load(path: str | pathlib.Path, /, *, env: str | None = None) -> dict[str, t.Any]: ...
+def load(paths: Paths, /, *, env: str | None = None) -> dict[str, t.Any]: ...
 @t.overload
 def load(
-    path: str | pathlib.Path,
+    paths: Paths,
     /,
     *,
     cls: type[StructT],
@@ -143,9 +170,9 @@ def load(
     dec_hook: Callable[[type[t.Any], t.Any], t.Any] | None = None,
 ) -> StructT: ...
 @t.overload
-def load(path: str | pathlib.Path, /, *, cls: type[BaseModelT], strict: bool = False) -> BaseModelT: ...
+def load(paths: Paths, /, *, cls: type[BaseModelT], strict: bool = False) -> BaseModelT: ...
 def load(
-    path: str | pathlib.Path,
+    paths: Paths,
     /,
     *,
     cls: type[pydantic.BaseModel | msgspec.Struct] | None = None,
@@ -157,11 +184,11 @@ def load(
     Loads arbitrary configuration from the given path, performing environment variable substitutions, and
     parses it into the given class (or to a dictionary if no class was provided).
 
-    Currently supported formats are: yaml, toml and JSON. Additional formats can be supported by creating your own
+    Currently supported formats are: YAML, TOML and JSON. Additional formats can be supported by creating your own
     custom implementation of :obj:`~confspec.parsers.abc.Parser` and registering it with :obj:`~parser_registry`.
 
     Args:
-        path: The path to the configuration file.
+        paths: The path to the configuration file, or paths to multiple configuration files to load.
         cls: The pydantic BaseModel, or msgspec Struct to parse the configuration into. If :obj:`None`, the
             configuration will be parsed into a dictionary. Defaults to :obj:`None`.
         env: The name of an additional environment configuration to load and merge with the base configuration.
@@ -181,19 +208,14 @@ def load(
         :obj:`ValueError`: If the file cannot be parsed to a dictionary (e.g. the top level object is an array).
         :obj:`ImportError`: If a required dependency is not installed.
     """
-    path = pathlib.Path(path) if not isinstance(path, pathlib.Path) else path
-
-    contents: list[str | bytes] = []
-    with open(path, "rb") as file:
-        contents.append(file.read().strip())
+    if isinstance(paths, (str, pathlib.Path)):
+        paths = [paths]
 
     resolved_env = (env or os.getenv("CONFSPEC_ENV", "")).strip()
-    if resolved_env:
-        os.environ["CONFSPEC_ENV"] = resolved_env
 
-    env_file_path = (path.parent / helpers.env_file_name(path, resolved_env)) if resolved_env else None
-    if env_file_path and env_file_path.is_file():
-        with open(env_file_path, "rb") as file:
-            contents.append(file.read().strip())
+    contents: list[ContentAndFormat] = []
+    for path in paths:
+        contents.extend(_load(path, resolved_env or None))
 
-    return _loads(contents, path.suffix[1:], cls=cls, strict=strict, dec_hook=dec_hook)
+    with helpers.temp_set_env("CONFSPEC_ENV", resolved_env or None):
+        return _loads(contents, cls=cls, strict=strict, dec_hook=dec_hook)

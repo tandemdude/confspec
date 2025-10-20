@@ -86,3 +86,29 @@ def test_loads_toml() -> None:
     assert isinstance(parsed, dict)
     assert parsed["foo"] == "bar"
     assert parsed["baz"] == 123
+
+
+def test_load_file() -> None:
+    parsed = loader.load("tests/resources/config.toml")
+
+    assert isinstance(parsed, dict)
+    assert parsed == {"foo": "bar", "baz": 123, "bork": {"qux": "quark"}}
+
+
+def test_load_file_with_env() -> None:
+    parsed = loader.load("tests/resources/config.toml", env="prod")
+
+    assert isinstance(parsed, dict)
+    assert parsed == {"foo": "baz", "baz": 123, "bork": {"qux": 123}}
+
+
+def test_load_multiple_files() -> None:
+    parsed = loader.load(["tests/resources/config.toml", "tests/resources/config2.toml"], env="prod")
+
+    assert isinstance(parsed, dict)
+    assert parsed == {
+        "foo": "baz",
+        "baz": 123,
+        "bork": {"qux": 123},
+        "db": {"host": "localhost", "user": "postgres", "dbname": "postgres", "port": 5432},
+    }

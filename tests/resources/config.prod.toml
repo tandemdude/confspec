@@ -1,0 +1,4 @@
+foo = "baz"
+
+[bork]
+qux = 123

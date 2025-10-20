@@ -22,10 +22,13 @@ from __future__ import annotations
 
 __all__ = ["env_file_name", "is_msgspec", "is_pydantic"]
 
+import contextlib
+import os
 import typing as t
 
 if t.TYPE_CHECKING:
     import pathlib
+    from collections.abc import Generator
 
     import msgspec
     import pydantic
@@ -53,3 +56,18 @@ def is_pydantic(cls: t.Any) -> t_ex.TypeGuard[type[pydantic.BaseModel]]:
         return issubclass(cls, pydantic.BaseModel)
     except ImportError:
         return False
+
+
+@contextlib.contextmanager
+def temp_set_env(key: str, value: str | None) -> Generator[None, t.Any, t.Any]:
+    old_value = os.getenv(key, None)
+
+    if value is not None:
+        os.environ[key] = value
+
+    yield
+
+    if old_value is not None:
+        os.environ[key] = old_value
+    else:
+        os.environ.pop(key, None)

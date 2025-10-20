@@ -1,0 +1,5 @@
+[db]
+host = "localhost"
+user = "postgres"
+dbname = "postgres"
+port = 5432
