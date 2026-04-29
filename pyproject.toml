@@ -41,7 +41,7 @@ dev = [
 ]
 extras = [
     "msgspec>=0.21.1",
-    "pydantic>=2.13.0",
+    "pydantic>=2.13.3",
     "ruamel-yaml>=0.18.10",
 ]
 format = [
