@@ -37,7 +37,7 @@ changelog = [
     "towncrier>=25.8.0",
 ]
 dev = [
-    "nox>=2025.10.16",
+    "nox>=2026.4.10",
 ]
 extras = [
     "msgspec>=0.19.0",
