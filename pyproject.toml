@@ -60,7 +60,7 @@ test = [
     { include-group = "extras" }
 ]
 typecheck = [
-    "pyright>=1.1.406",
+    "pyright>=1.1.409",
     { include-group = "extras" },
     { include-group = "test" }
 ]
