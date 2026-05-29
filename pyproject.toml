@@ -51,7 +51,7 @@ release = [
     "flit>=3.12.0",
 ]
 slotscheck = [
-    "slotscheck>=0.19.1",
+    "slotscheck>=0.20.0",
 ]
 test = [
     "pytest>=8.4.2",
