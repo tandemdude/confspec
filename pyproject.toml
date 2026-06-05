@@ -45,7 +45,7 @@ extras = [
     "ruamel-yaml>=0.18.10",
 ]
 format = [
-    "ruff>=0.15.14",
+    "ruff>=0.15.16",
 ]
 release = [
     "flit>=3.12.0",
