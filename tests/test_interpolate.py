@@ -18,6 +18,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import graphlib
+
 import pytest
 
 from confspec import interpolate
@@ -95,3 +97,39 @@ def test_interpolate_composite_string(monkeypatch: pytest.MonkeyPatch, itp: inte
     monkeypatch.setenv("BAZ", "bork")
 
     assert itp._interpolate_value((), "${FOO} qux ${BAZ}") == "bar qux bork"
+
+
+def test_interpolate_simple_refrence() -> None:
+    itp = interpolate.Interpolator({"foo": "bar", "baz": "${.foo}"})
+    assert itp.interpolate()["baz"] == "bar"
+
+
+def test_interpolate_nested_refrence() -> None:
+    itp = interpolate.Interpolator({"foo": {"bar": "baz"}, "bork": "${.foo.bar}"})
+    assert itp.interpolate()["bork"] == "baz"
+
+
+def test_interpolate_array_refrence() -> None:
+    itp = interpolate.Interpolator({"foo": ["bar"], "baz": "${.foo[0]}"})
+    assert itp.interpolate()["baz"] == "bar"
+
+
+def test_interpolate_nested_array_reference() -> None:
+    itp = interpolate.Interpolator({"foo": {"bar": ["baz"]}, "bork": "${.foo.bar[0]}"})
+    assert itp.interpolate()["bork"] == "baz"
+
+
+def test_interpolate_reference_preserves_type() -> None:
+    itp = interpolate.Interpolator({"foo": 1234, "baz": "${.foo}"})
+    assert itp.interpolate()["foo"] == 1234
+
+
+def test_interpolate_circular_refrence() -> None:
+    itp = interpolate.Interpolator({"foo": "${.bar}", "bar": "${.foo}"})
+    with pytest.raises(graphlib.CycleError):
+        itp.interpolate()
+
+
+def test_interpolate_composite_reference() -> None:
+    itp = interpolate.Interpolator({"foo": 1234, "bar": "baz", "bork": "${.foo} ${.bar}"})
+    assert itp.interpolate()["bork"] == "1234 baz"
