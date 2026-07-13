@@ -150,7 +150,9 @@ class Interpolator:
 
     def _interpolate_value(self, _: path.PathT, value: str) -> t.Any:
         ref_match = REF_INTERPOLATION_PATTERN.fullmatch(value)
-        if ref_match is not None and ref_match.group("escaped") is not None:
+        if ref_match is not None:
+            if ref_match.group("escaped") is not None:
+                return ref_match.group("raw")
             # return the current value at the key to preserve the type
             return self._get(path.parse_path(ref_match.group("path")))
 

@@ -138,3 +138,7 @@ def test_interpolate_composite_reference() -> None:
 def test_interpolate_double_nested_array_reference() -> None:
     itp = interpolate.Interpolator({"foo": [[{"bar": "baz"}]], "bork": "${.foo[0][0].bar}"})
     assert itp.interpolate()["bork"] == "baz"
+
+
+def test_interpolate_escaped_reference(itp: interpolate.Interpolator) -> None:
+    assert itp._interpolate_value((), "$${.foo}") == "${.foo}"
