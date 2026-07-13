@@ -133,3 +133,8 @@ def test_interpolate_circular_refrence() -> None:
 def test_interpolate_composite_reference() -> None:
     itp = interpolate.Interpolator({"foo": 1234, "bar": "baz", "bork": "${.foo} ${.bar}"})
     assert itp.interpolate()["bork"] == "1234 baz"
+
+
+def test_interpolate_double_nested_array_reference() -> None:
+    itp = interpolate.Interpolator({"foo": [[{"bar": "baz"}]], "bork": "${.foo[0][0].bar}"})
+    assert itp.interpolate()["bork"] == "baz"
