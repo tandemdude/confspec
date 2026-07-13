@@ -99,17 +99,17 @@ def test_interpolate_composite_string(monkeypatch: pytest.MonkeyPatch, itp: inte
     assert itp._interpolate_value((), "${FOO} qux ${BAZ}") == "bar qux bork"
 
 
-def test_interpolate_simple_refrence() -> None:
+def test_interpolate_simple_reference() -> None:
     itp = interpolate.Interpolator({"foo": "bar", "baz": "${.foo}"})
     assert itp.interpolate()["baz"] == "bar"
 
 
-def test_interpolate_nested_refrence() -> None:
+def test_interpolate_nested_reference() -> None:
     itp = interpolate.Interpolator({"foo": {"bar": "baz"}, "bork": "${.foo.bar}"})
     assert itp.interpolate()["bork"] == "baz"
 
 
-def test_interpolate_array_refrence() -> None:
+def test_interpolate_array_reference() -> None:
     itp = interpolate.Interpolator({"foo": ["bar"], "baz": "${.foo[0]}"})
     assert itp.interpolate()["baz"] == "bar"
 
@@ -124,7 +124,7 @@ def test_interpolate_reference_preserves_type() -> None:
     assert itp.interpolate()["foo"] == 1234
 
 
-def test_interpolate_circular_refrence() -> None:
+def test_interpolate_circular_reference() -> None:
     itp = interpolate.Interpolator({"foo": "${.bar}", "bar": "${.foo}"})
     with pytest.raises(graphlib.CycleError):
         itp.interpolate()
@@ -142,3 +142,9 @@ def test_interpolate_double_nested_array_reference() -> None:
 
 def test_interpolate_escaped_reference(itp: interpolate.Interpolator) -> None:
     assert itp._interpolate_value((), "$${.foo}") == "${.foo}"
+
+
+def test_interpolate_non_primitive_composite_reference_errors() -> None:
+    itp = interpolate.Interpolator({"foo": {"bar": "baz"}, "bork": "foo: ${.foo}"})
+    with pytest.raises(ValueError):
+        itp.interpolate()
