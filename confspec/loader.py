@@ -88,7 +88,7 @@ def _loads(
         mappings.append(parser().read(content))
 
     parsed = functools.reduce(_merge_dicts, mappings)
-    interpolated = interpolate.InterpolationVisitor().visit(parsed)
+    interpolated = interpolate.Interpolator(parsed).interpolate()
     if cls is None:
         return interpolated
 

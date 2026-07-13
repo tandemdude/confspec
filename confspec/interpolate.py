@@ -20,24 +20,33 @@
 # SOFTWARE.
 from __future__ import annotations
 
-__all__ = ["InterpolationVisitor", "try_interpolate"]
+__all__ = ["Interpolator"]
 
+import collections
+import functools
+import graphlib
 import os
 import re
 import typing as t
 
-_escaped = r"(?P<escaped>\$)"
-_name = r"(?P<name>[a-zA-Z_]\w*)"
-_delim = r"(?P<delim>[^]}]+)"
-_strip = r"(?P<strip>~)"
-_default = r"(?P<default>:[^}]*|\?)"
+from confspec import path
 
-INTERPOLATION_PATTERN: t.Final[re.Pattern[str]] = re.compile(
-    rf"{_escaped}?(?P<raw>\${{{_name}(?:\[{_delim}])?{_strip}?{_default}?}})"
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Iterable
+
+_escaped = r"(?P<escaped>\$)"
+_env_name = r"(?P<name>[a-zA-Z_]\w*)"
+_env_delim = r"(?P<delim>[^]}]+)"
+_env_strip = r"(?P<strip>~)"
+_env_default = r"(?P<default>:[^}]*|\?)"
+
+ENV_INTERPOLATION_PATTERN: t.Final[re.Pattern[str]] = re.compile(
+    rf"{_escaped}?(?P<raw>\${{{_env_name}(?:\[{_env_delim}])?{_env_strip}?{_env_default}?}})"
 )
 
 
-def _replace_fn(match: re.Match[str]) -> str:
+def _env_replace_fn(match: re.Match[str]) -> str:
     if match.group("escaped"):
         return str(match.group("raw"))
 
@@ -59,47 +68,121 @@ def _replace_fn(match: re.Match[str]) -> str:
     return resolved.strip() if match.group("strip") is not None else resolved
 
 
-def try_interpolate(value: str) -> t.Any:
-    match = INTERPOLATION_PATTERN.fullmatch(value)
-    matched_and_not_escaped = match is not None and match.group("escaped") is None
+_ref_path = r"(?P<path>[\w\-]+(?:\[\d+]|\.[\w\-]+)*)"
 
-    if matched_and_not_escaped:
-        assert match is not None
-        # If the "?" (None as default) flag is present, and the variable is unset
-        # then return None
-        if match.group("default") == "?" and os.getenv(match.group("name")) is None:
-            return None
-
-        # if a delimiter was specified, split into list - otherwise use the standard substitution function
-        if (delim := match.group("delim")) is not None:
-            strip = match.group("strip") is not None
-            val = os.getenv(match.group("name"), (match.group("default") or "")[1:])
-            return [(elem.strip() if strip else elem) for elem in val.split(delim)]
-
-    return INTERPOLATION_PATTERN.sub(_replace_fn, value)
+REF_INTERPOLATION_PATTERN: t.Final[re.Pattern[str]] = re.compile(rf"{_escaped}?(?P<raw>\${{\.{_ref_path}}})")
 
 
-class InterpolationVisitor:
-    __slots__ = ()
+def extract_refs(key: path.PathT, value: t.Any, *, refs: dict[path.PathT, set[path.PathT]]) -> t.Any:
+    if not isinstance(value, str):
+        return value
 
-    def visit_value(self, val: t.Any) -> t.Any:
-        if not isinstance(val, str):
+    for match in REF_INTERPOLATION_PATTERN.finditer(value):
+        if match.group("escaped") is not None:
+            continue
+
+        refs[key].add(path.parse_path(match.group("path")))
+
+    return value
+
+
+def _ref_replace_fn(match: re.Match[str], *, get_ref: Callable[[path.PathT], t.Any]) -> str:
+    if match.group("escaped"):
+        return str(match.group("raw"))
+
+    ref = path.parse_path(raw_ref := match.group("path"))
+    value = get_ref(ref)
+
+    if isinstance(value, (dict, list)):
+        tn = type(t.cast("t.Any", value)).__name__
+        raise ValueError(f"cannot expand reference {raw_ref!r} as it evaluates to non-primitive type {tn!r}")
+
+    return str(value)
+
+
+class Visitor:
+    __slots__ = ("_skip_keys", "_value_fn")
+
+    def __init__(self, value_fn: Callable[[path.PathT, t.Any], t.Any], skip_keys: Iterable[path.PathT] = ()) -> None:
+        self._value_fn = value_fn
+        self._skip_keys = set(skip_keys)
+
+    def visit_value(self, key: path.PathT, val: t.Any) -> t.Any:
+        if not isinstance(val, str) or key in self._skip_keys:
             return val
-        return try_interpolate(val)
+        return self._value_fn(key, val)
 
-    def visit_list(self, lst: list[t.Any]) -> list[t.Any]:
+    def visit_list(self, key: path.PathT, lst: list[t.Any]) -> list[t.Any]:
         for i in range(len(lst)):
-            lst[i] = self.visit(lst[i])
+            lst[i] = self.visit(lst[i], key=(*key, i))
         return lst
 
-    def visit_dict(self, dct: dict[str, t.Any]) -> dict[str, t.Any]:
+    def visit_dict(self, key: path.PathT, dct: dict[str, t.Any]) -> dict[str, t.Any]:
         for k, v in list(dct.items()):
-            dct[k] = self.visit(v)
+            dct[k] = self.visit(v, key=(*key, k))
         return dct
 
-    def visit(self, item: t.Any) -> t.Any:
+    def visit(self, item: t.Any, *, key: path.PathT = ()) -> t.Any:
         if isinstance(item, dict):
-            return self.visit_dict(t.cast("dict[str, t.Any]", item))
+            return self.visit_dict(key, t.cast("dict[str, t.Any]", item))
         elif isinstance(item, list):
-            return self.visit_list(t.cast("list[t.Any]", item))
-        return self.visit_value(item)
+            return self.visit_list(key, t.cast("list[t.Any]", item))
+        return self.visit_value(key, item)
+
+
+class Interpolator:
+    __slots__ = ("_data",)
+
+    def __init__(self, data: dict[str, t.Any]) -> None:
+        self._data = data
+
+    def _set(self, key_path: path.PathT, val: t.Any) -> None:
+        this = self._data
+        for elem in key_path[:-1]:
+            this = this[elem]  # type: ignore[reportArgumentType]
+        this[key_path[-1]] = val  # type: ignore[reportArgumentType]
+
+    def _get(self, key_path: path.PathT) -> t.Any:
+        this = self._data
+        for elem in key_path:
+            this = this[elem]  # type: ignore[reportArgumentType]
+        return this
+
+    def _interpolate_value(self, _: path.PathT, value: str) -> t.Any:
+        ref_match = REF_INTERPOLATION_PATTERN.fullmatch(value)
+        if ref_match is not None:
+            if ref_match.group("escaped") is not None:
+                return ref_match.group("raw")
+            # return the current value at the key to preserve the type
+            return self._get(path.parse_path(ref_match.group("path")))
+
+        env_match = ENV_INTERPOLATION_PATTERN.fullmatch(value)
+        if env_match is not None and env_match.group("escaped") is None:
+            # If the "?" (None as default) flag is present, and the variable is unset
+            # then return None
+            if env_match.group("default") == "?" and os.getenv(env_match.group("name")) is None:
+                return None
+
+            # if a delimiter was specified, split into list - otherwise use the standard substitution function
+            if (delim := env_match.group("delim")) is not None:
+                strip = env_match.group("strip") is not None
+                val = os.getenv(env_match.group("name"), (env_match.group("default") or "")[1:])
+                return [(elem.strip() if strip else elem) for elem in val.split(delim)]
+
+        value = ENV_INTERPOLATION_PATTERN.sub(_env_replace_fn, value)
+        return REF_INTERPOLATION_PATTERN.sub(functools.partial(_ref_replace_fn, get_ref=self._get), value)
+
+    def _get_resolution_order(self) -> list[path.PathT]:
+        refs: dict[path.PathT, set[path.PathT]] = collections.defaultdict(set)
+        Visitor(functools.partial(extract_refs, refs=refs)).visit(self._data)
+        return list(graphlib.TopologicalSorter(refs).static_order())
+
+    def interpolate(self) -> dict[str, t.Any]:
+        prereqs = self._get_resolution_order()
+
+        visitor = Visitor(self._interpolate_value)
+        for p in prereqs:
+            self._set(p, visitor.visit(self._get(p)))
+
+        visitor = Visitor(self._interpolate_value, skip_keys=prereqs)
+        return visitor.visit(self._data)

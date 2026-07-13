@@ -99,6 +99,8 @@ Config(
 
 ## Interpolation Syntax
 
+**Environment Interpolation:**
+
 - `${VAR}`
   - replaced with the value of the `VAR` environment variable
   - if `VAR` is unset during interpolation, a `KeyError` will be raised
@@ -128,6 +130,22 @@ For example:
 > [!NOTE]
 > The order that the flags are written is important, as the interpolation syntax is parsed using regex. You should
 > always specify the flags in the same order as the valid expressions shown above.
+
+**Reference Interpolation:**
+
+This allows interpolation of values that are already specified within the config into other config values, using
+a vastly simplified syntax than the environment substitutions.
+
+If any of the following are unset, a `KeyError` or `IndexError` will be raised.
+
+- `${.foo}`
+  - replaced with the value at config key `foo`
+- `${.foo.bar}`
+  - replaced with the nested value at config key `foo.bar`
+- `${.foo[0]}`
+  - replaced with the nested array value at config key `foo[0]`
+- `${.foo[0].bar}`
+  - replaced with the nested value within an array at config key `foo[0].bar`
 
 ## Environment-specific Configurations
 
