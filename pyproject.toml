@@ -49,7 +49,7 @@ format = [
     "ruff>=0.15.21",
 ]
 release = [
-    "flit>=3.12.0",
+    "flit>=4.0.2",
 ]
 slotscheck = [
     "slotscheck>=0.20.1",
